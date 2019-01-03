@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -75,8 +76,9 @@ namespace TvMazeScraper.Models
         [JsonProperty("country")]
         public Country Country { get; set; }
 
+        //FIXME: This should be a DateTime field but incorrect dates (like: 1927-00-00) gives errors during processing. Order by still works because of the format (yyyy-MM-dd) but using the real type is better.
         [JsonProperty("birthday")]
-        public DateTime? Birthday { get; set; }
+        public string Birthday { get; set; }
 
         //[JsonProperty("deathday")]
         //public DateTime? Deathday { get; set; }

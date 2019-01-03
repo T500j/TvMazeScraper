@@ -31,7 +31,7 @@ namespace TvMazeScraper
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).
                 AddJsonOptions(options => 
                 {
-                    options.SerializerSettings.DateFormatString ="yyyy-MM-dd";                    
+                    options.SerializerSettings.DateFormatString ="yyyy-MM-dd";
                 }
                 );
 
