@@ -25,8 +25,10 @@ namespace TvMazeScraper.Scraper
         {
             _scopeFactory = scopeFactory;
             _settings = settings.Value;
-            _client = new HttpClient();
-            _client.BaseAddress = new Uri(_settings.EndPoint);
+            _client = new HttpClient
+            {
+                BaseAddress = new Uri(_settings.EndPoint)
+            };
 
 
         }
@@ -65,6 +67,7 @@ namespace TvMazeScraper.Scraper
                 else //other error (possible connection error)
                 {
                     //try same page again later (15 seconds)
+                    //TODO: Log error etc
                     Thread.Sleep(15000);
                     return page;
                 }
@@ -73,12 +76,13 @@ namespace TvMazeScraper.Scraper
             {
 
                 var shows = await response.Content.ReadAsAsync<IEnumerable<Show>>();
+                //page 1: lastid 249, maxId 499
                 int lastId = (page * idsPerPage) - 1;
-                int maxId = lastId + idsPerPage + 1;
+                int maxId = lastId + idsPerPage;
 
                 foreach (var show in shows)
                 {
-                    Console.WriteLine($"show id: {show.Id}");
+                   // Console.WriteLine($"show id: {show.Id}");
                     var cast = await GetCast(show.Id);
                     show.Cast = cast;
                     using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
