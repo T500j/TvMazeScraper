@@ -79,14 +79,14 @@ namespace TvMazeScraper.Scraper
                 //page 1: lastid 249, maxId 499
                 int lastId = (page * idsPerPage) - 1;
                 int maxId = lastId + idsPerPage;
-
-                foreach (var show in shows)
+                using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
                 {
-                   // Console.WriteLine($"show id: {show.Id}");
-                    var cast = await GetCast(show.Id);
-                    show.Cast = cast;
-                    using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
+                    foreach (var show in shows)
                     {
+                        // Console.WriteLine($"show id: {show.Id}");
+                        var cast = await GetCast(show.Id);
+                        show.Cast = cast;
+
                         //delete old entries:
                         context.Set<Show>().RemoveRange(context.Set<Show>().Where(s => s.Id > lastId && s.Id <= show.Id));
                         context.SaveChanges();
@@ -96,15 +96,12 @@ namespace TvMazeScraper.Scraper
                     }
                     //try and keep under the rate limit:
                     Thread.Sleep(1000 / _settings.CallsPerSecond);
-                }
-                if (lastId < maxId)
-                {
-                    using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
+
+                    if (lastId < maxId)
                     {
                         //delete remaining entries:
                         context.Set<Show>().RemoveRange(context.Set<Show>().Where(s => s.Id > lastId && s.Id <= maxId));
                         context.SaveChanges();
-
                     }
                 }
                 //try and keep under the rate limit:
