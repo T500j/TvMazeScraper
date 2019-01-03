@@ -20,7 +20,7 @@ namespace TvMazeScraper.Controllers
             _context = context;
         }
         [HttpGet()]
-        public ActionResult<IEnumerable<Show>> Get(int page)
+        public ActionResult<IEnumerable<Show>> Get(int page=0)
         {
 
             var showInfo = _context.Set<Show>().OrderBy(s => s.Id).Skip(ItemsPerPage * page).Take(ItemsPerPage).
