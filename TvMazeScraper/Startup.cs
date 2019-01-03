@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TvMazeScraper.Data;
+using TvMazeScraper.Scraper;
 
 namespace TvMazeScraper
 {
@@ -30,13 +31,18 @@ namespace TvMazeScraper
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).
                 AddJsonOptions(options => 
                 {
-                    options.SerializerSettings.DateFormatString ="yyyy-MM-dd";
+                    options.SerializerSettings.DateFormatString ="yyyy-MM-dd";                    
                 }
                 );
 
             services.AddDbContext<DataContext>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("DataContext"))
             );
+
+            services.Configure<ScraperSettings>(options => Configuration.GetSection("ScraperSettings").Bind(options));
+
+
+            services.AddHostedService<ScraperHostedService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -63,7 +69,7 @@ namespace TvMazeScraper
 
                 if (env.IsDevelopment())
                 {
-                    dbContext.Database.EnsureDeleted();
+                    //dbContext.Database.EnsureDeleted();
                     dbContext.Database.EnsureCreated();
                 }
                 else

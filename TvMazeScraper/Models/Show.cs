@@ -1,15 +1,19 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace TvMazeScraper.Models
 {
-    public class Show:DbEntity
+    public class Show
     {
-    
+        [Key]
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
         [JsonProperty("url")]
         public string Url { get; set; }
 
@@ -25,17 +29,17 @@ namespace TvMazeScraper.Models
         //[JsonProperty("genres")]
         //public string[] Genres { get; set; }
 
-        [JsonProperty("status")]
-        public string Status { get; set; }
+        //[JsonProperty("status")]
+        //public string Status { get; set; }
 
-        [JsonProperty("runtime")]
-        public long Runtime { get; set; }
+        //[JsonProperty("runtime")]
+        //public long Runtime { get; set; }
 
         [JsonProperty("premiered")]
-        public DateTimeOffset Premiered { get; set; }
+        public DateTime? Premiered { get; set; }
 
-        [JsonProperty("officialSite")]
-        public string OfficialSite { get; set; }
+        //[JsonProperty("officialSite")]
+        //public string OfficialSite { get; set; }
 
         //[JsonProperty("schedule")]
         //public Schedule Schedule { get; set; }
@@ -43,8 +47,8 @@ namespace TvMazeScraper.Models
         //[JsonProperty("rating")]
         //public Rating Rating { get; set; }
 
-        [JsonProperty("weight")]
-        public int Weight { get; set; }
+        //[JsonProperty("weight")]
+        //public int Weight { get; set; }
 
         //[JsonProperty("network")]
         //public Network Network { get; set; }
@@ -58,19 +62,25 @@ namespace TvMazeScraper.Models
         //[JsonProperty("image")]
         //public Image Image { get; set; }
 
-        [JsonProperty("summary")]
-        public string Summary { get; set; }
+        //[JsonProperty("summary")]
+        //public string Summary { get; set; }
 
-        [JsonProperty("updated")]
-        public int Updated { get; set; }
+        //[JsonProperty("updated")]
+        //public long Updated { get; set; }
 
         //[JsonProperty("_links")]
         //public Links Links { get; set; }
 
-        private string 
+        [JsonIgnore]
+        internal string _jsonCast { get; set; }
 
         [NotMapped]
         [JsonProperty("cast")]
-        public virtual ICollection<Cast> Cast { get; set; }
+        public List<Cast> Cast
+        {
+            //mapping the entire cast to one field in the database (in json) 
+            get { return _jsonCast == null ? null : JsonConvert.DeserializeObject<List<Cast>>(_jsonCast); }
+            set { _jsonCast = JsonConvert.SerializeObject(value); }
+        }
     }
 }

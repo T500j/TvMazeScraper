@@ -17,18 +17,8 @@ namespace TvMazeScraper.Data
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-            //add all models of Type DbEntity
-
-            var entityMethod = typeof(ModelBuilder).GetMethod("Entity",
-                new Type[] { });
-            var entityTypes = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.BaseType == typeof(DbEntity));
-            foreach(var type in entityTypes)
-            {
-                
-                entityMethod.MakeGenericMethod(type).Invoke(modelBuilder, new object []{ });
-            }
-
+            modelBuilder.Entity<Show>().Property(s => s._jsonCast).HasColumnName("JsonCast");
+            modelBuilder.Entity<Show>().Property(s => s.Id).ValueGeneratedNever();
         }
     }
 }
