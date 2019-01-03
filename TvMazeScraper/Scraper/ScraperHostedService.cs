@@ -19,6 +19,7 @@ namespace TvMazeScraper.Scraper
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ScraperSettings _settings;
         private HttpClient _client { get; set; }
+        private const int idsPerPage = 250;
 
         public ScraperHostedService(IServiceScopeFactory scopeFactory, IOptions<ScraperSettings> settings)
         {
@@ -30,15 +31,12 @@ namespace TvMazeScraper.Scraper
 
         }
 
-        
-
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var page = GetLastPage();
             while(!stoppingToken.IsCancellationRequested)
             {
                 page = await UpdateShows(page);
-
             }
         }
 
@@ -46,7 +44,7 @@ namespace TvMazeScraper.Scraper
         {
             using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
             {
-                return (context.Set<Show>().Max(s => s.Id))/250;
+                return (context.Set<Show>().Max(s => s.Id))/idsPerPage;
             }
         }
 
@@ -73,47 +71,41 @@ namespace TvMazeScraper.Scraper
             }
             else
             {
-                try
+
+                var shows = await response.Content.ReadAsAsync<IEnumerable<Show>>();
+                int lastId = (page * idsPerPage) - 1;
+                int maxId = lastId + idsPerPage + 1;
+
+                foreach (var show in shows)
                 {
-                    var shows = await response.Content.ReadAsAsync<IEnumerable<Show>>();
-                    int lastId = (page * 250) - 1;
-                    int maxId = lastId + 251;
-
-                    foreach (var show in shows)
+                    Console.WriteLine($"show id: {show.Id}");
+                    var cast = await GetCast(show.Id);
+                    show.Cast = cast;
+                    using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
                     {
-                        Console.WriteLine($"show id: {show.Id}");
-                        var cast = await GetCast(show.Id);
-                        show.Cast = cast;
-                        using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
-                        {
-                            //delete old entries:
-                            context.Set<Show>().RemoveRange(context.Set<Show>().Where(s => s.Id > lastId && s.Id <= show.Id));
-                            context.SaveChanges();
-                            context.Set<Show>().Add(show);
-                            context.SaveChanges();
-                            lastId = show.Id;
-                        }
-                        //try and keep under the rate limit:
-                        Thread.Sleep(1000 / _settings.CallsPerSecond);
-                    }
-                    if (lastId < maxId)
-                    {
-                        using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
-                        {
-                            //delete remaining entries:
-                            context.Set<Show>().RemoveRange(context.Set<Show>().Where(s => s.Id > lastId && s.Id <= maxId));
-                            context.SaveChanges();
-
-                        }
+                        //delete old entries:
+                        context.Set<Show>().RemoveRange(context.Set<Show>().Where(s => s.Id > lastId && s.Id <= show.Id));
+                        context.SaveChanges();
+                        context.Set<Show>().Add(show);
+                        context.SaveChanges();
+                        lastId = show.Id;
                     }
                     //try and keep under the rate limit:
                     Thread.Sleep(1000 / _settings.CallsPerSecond);
                 }
-
-                catch (JsonSerializationException e)
+                if (lastId < maxId)
                 {
+                    using (var context = _scopeFactory.CreateScope().ServiceProvider.GetService<DataContext>())
+                    {
+                        //delete remaining entries:
+                        context.Set<Show>().RemoveRange(context.Set<Show>().Where(s => s.Id > lastId && s.Id <= maxId));
+                        context.SaveChanges();
 
+                    }
                 }
+                //try and keep under the rate limit:
+                Thread.Sleep(1000 / _settings.CallsPerSecond);
+
                 return page + 1;
             }
         }
@@ -133,27 +125,14 @@ namespace TvMazeScraper.Scraper
                 {
                     //try same page again later (15 seconds)
                     Thread.Sleep(15000);
-                    return await GetCast(showId); ;
+                    return await GetCast(showId); 
                 }
             }
             else //rate limit or connection error
             {
-                try
-                {
-
-
-                    var cast = await response.Content.ReadAsAsync<List<Cast>>();
-                    return cast;
-                }
-                catch(JsonSerializationException e)
-                {
-                    return null;
-                }
-                
+                var cast = await response.Content.ReadAsAsync<List<Cast>>();
+                return cast;
             }
         }
-
-
-
     }
 }
